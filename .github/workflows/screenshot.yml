@@ -1,11 +1,11 @@
+name: GPS Screenshot Permanent
+
 permissions:
   contents: write
-  
-name: GPS Screenshot Permanent
 
 on:
   schedule:
-    - cron: "*/5 * * * *"   # IST 23:00–05:00
+    - cron: "*/5 18-23 * * *"
   workflow_dispatch:
 
 jobs:
@@ -13,29 +13,29 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repo
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
           persist-credentials: true
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: 20
 
-      - name: Install dependencies
-        run: npm install
+      - run: npm install
 
-      - name: Run screenshot script
+      - name: Take screenshot
         run: node screenshot.js
         env:
           LOGIN_USERNAME: ${{ secrets.LOGIN_USERNAME }}
           LOGIN_PASSWORD: ${{ secrets.LOGIN_PASSWORD }}
 
-      - name: Commit screenshots
+      - name: Update index.html
+        run: node generate_index.js
+
+      - name: Commit & Push
         run: |
           git config user.name "github-actions"
           git config user.email "actions@github.com"
-          git add screenshots/*.png
-          git commit -m "Auto: GPS screenshot $(date +'%Y-%m-%d %H:%M')" || echo "No changes"
+          git add screenshots/*.png index.html
+          git commit -m "Auto update screenshots $(date +'%Y-%m-%d %H:%M')" || echo "No changes"
           git push
