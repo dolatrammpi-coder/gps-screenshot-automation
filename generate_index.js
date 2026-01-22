@@ -1,53 +1,50 @@
 const fs = require("fs");
 const path = require("path");
 
-const screenshotsDir = path.join(__dirname, "screenshots");
+const baseDir = path.join(__dirname, "screenshots");
 const indexPath = path.join(__dirname, "index.html");
 
-if (!fs.existsSync(screenshotsDir)) {
-  console.log("No screenshots folder");
-  process.exit(0);
-}
+if (!fs.existsSync(baseDir)) process.exit(0);
 
-const files = fs
-  .readdirSync(screenshotsDir)
-  .filter(f => f.endsWith(".png"))
-  .sort()
-  .reverse();
+const months = fs.readdirSync(baseDir).sort().reverse();
 
-let imagesHtml = "";
+let latestHtml = "";
+let archiveHtml = "";
 
-for (const file of files) {
-  imagesHtml += `
-  <div class="item">
-    <img src="screenshots/${file}">
-    <div class="time">${file}</div>
-  </div>
-`;
+for (const month of months) {
+  const monthDir = path.join(baseDir, month);
+  if (!fs.statSync(monthDir).isDirectory()) continue;
+
+  const files = fs
+    .readdirSync(monthDir)
+    .filter(f => f.endsWith(".png"))
+    .sort()
+    .reverse();
+
+  if (!files.length) continue;
+
+  if (!latestHtml) {
+    latestHtml = `<img src="screenshots/${month}/${files[0]}">`;
+  }
+
+  archiveHtml += `<div class="month"><h3>${month}</h3>`;
+  for (const f of files) {
+    archiveHtml += `<img src="screenshots/${month}/${f}">`;
+  }
+  archiveHtml += `</div>`;
 }
 
 let html = fs.readFileSync(indexPath, "utf8");
 
-// 🔥 SIMPLE & SAFE replace
-const start = "<!-- AUTO-START -->";
-const end = "<!-- AUTO-END -->";
+html = html.replace(
+  /<div id="latest">[\s\S]*?<\/div>/,
+  `<div id="latest">${latestHtml}</div>`
+);
 
-if (!html.includes(start) || !html.includes(end)) {
-  console.error("AUTO markers not found in index.html");
-  process.exit(1);
-}
-
-const before = html.split(start)[0];
-const after = html.split(end)[1];
-
-html =
-  before +
-  start +
-  "\n" +
-  imagesHtml +
-  "\n" +
-  end +
-  after;
+html = html.replace(
+  /<!-- AUTO-START -->[\s\S]*?<!-- AUTO-END -->/,
+  `<!-- AUTO-START -->\n${archiveHtml}\n<!-- AUTO-END -->`
+);
 
 fs.writeFileSync(indexPath, html);
-console.log("index.html regenerated");
+console.log("index.html updated");
