@@ -1,12 +1,6 @@
 const puppeteer = require("puppeteer");
-const path = require("path");
 const fs = require("fs");
-const twilio = require("twilio");
-
-const client = twilio(
-  process.env.TWILIO_SID,
-  process.env.TWILIO_TOKEN
-);
+const path = require("path");
 
 (async () => {
   const browser = await puppeteer.launch({
@@ -37,30 +31,16 @@ const client = twilio(
     { waitUntil: "networkidle2", timeout: 60000 }
   );
 
+  // Folder create
+  const dir = path.join(process.cwd(), "screenshots");
+  if (!fs.existsSync(dir)) fs.mkdirSync(dir);
+
   const ts = new Date().toISOString().replace(/[:T]/g, "-").split(".")[0];
   const fileName = `gps_${ts}.png`;
-  const filePath = path.join(process.cwd(), fileName);
+  const filePath = path.join(dir, fileName);
 
   await page.screenshot({ path: filePath, fullPage: true });
-
-  // Upload image to Twilio (temporary public URL)
-  const mediaUrl = await client.media
-    .v1
-    .media
-    .create({
-      file: fs.createReadStream(filePath),
-      contentType: "image/png",
-    });
-
-  // Send WhatsApp message
-  await client.messages.create({
-    from: process.env.WHATSAPP_FROM,
-    to: process.env.WHATSAPP_TO,
-    body: "📸 GPS Dashboard Screenshot",
-    mediaUrl: [mediaUrl.url],
-  });
-
-  console.log("Screenshot sent to WhatsApp");
+  console.log("Saved:", filePath);
 
   await browser.close();
 })();
