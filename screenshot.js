@@ -1,29 +1,5 @@
 const puppeteer = require("puppeteer");
-const fs = require("fs");
 const path = require("path");
-const { google } = require("googleapis");
-
-// ===== Google Drive Auth =====
-const auth = new google.auth.GoogleAuth({
-  credentials: JSON.parse(process.env.GDRIVE_KEY),
-  scopes: ["https://www.googleapis.com/auth/drive.file"],
-});
-
-const drive = google.drive({ version: "v3", auth });
-
-async function uploadToDrive(filePath, fileName) {
-  const res = await drive.files.create({
-    requestBody: {
-      name: fileName,
-      parents: [process.env.GDRIVE_FOLDER_ID],
-    },
-    media: {
-      mimeType: "image/png",
-      body: fs.createReadStream(filePath),
-    },
-  });
-  console.log("Uploaded to Drive:", res.data.id);
-}
 
 (async () => {
   const browser = await puppeteer.launch({
@@ -40,8 +16,8 @@ async function uploadToDrive(filePath, fileName) {
     timeout: 60000,
   });
 
-  await page.type("#username", process.env.LOGIN_USERNAME, { delay: 50 });
-  await page.type("#password", process.env.LOGIN_PASSWORD, { delay: 50 });
+  await page.type("#username", process.env.LOGIN_USERNAME);
+  await page.type("#password", process.env.LOGIN_PASSWORD);
 
   await Promise.all([
     page.click('button[type="submit"]'),
@@ -56,14 +32,10 @@ async function uploadToDrive(filePath, fileName) {
 
   const ts = new Date().toISOString().replace(/[:T]/g, "-").split(".")[0];
   const fileName = `gps_screenshot_${ts}.png`;
-  const filePath = path.join(__dirname, fileName);
+  const filePath = path.join(process.cwd(), fileName);
 
   await page.screenshot({ path: filePath, fullPage: true });
   console.log("Saved:", fileName);
 
-  // Upload
-  await uploadToDrive(filePath, fileName);
-
-  fs.unlinkSync(filePath);
   await browser.close();
 })();
