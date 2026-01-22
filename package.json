@@ -1,8 +1,15 @@
 {
-  "name": "gps-screenshot",
+  "name": "gps-screenshot-whatsapp",
   "version": "1.0.0",
+  "description": "Automated GPS dashboard screenshot and WhatsApp delivery using GitHub Actions",
+  "main": "screenshot.js",
+  "scripts": {
+    "start": "node screenshot.js"
+  },
+  "author": "Automation",
+  "license": "MIT",
   "dependencies": {
     "puppeteer": "^22.0.0",
-    "googleapis": "^130.0.0"
+    "twilio": "^4.20.0"
   }
 }
