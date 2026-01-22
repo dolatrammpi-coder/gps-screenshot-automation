@@ -1,28 +1,38 @@
-name: GPS Screenshot WhatsApp
+name: GPS Screenshot Permanent
 
 on:
   schedule:
-    - cron: "*/5 18-23 * * *"
+    - cron: "*/5 18-23 * * *"   # IST 23:00–05:00
   workflow_dispatch:
 
 jobs:
-  send:
+  screenshot:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: true
 
-      - uses: actions/setup-node@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
           node-version: 20
 
-      - run: npm install
+      - name: Install dependencies
+        run: npm install
 
-      - run: node screenshot.js
+      - name: Run screenshot script
+        run: node screenshot.js
         env:
           LOGIN_USERNAME: ${{ secrets.LOGIN_USERNAME }}
           LOGIN_PASSWORD: ${{ secrets.LOGIN_PASSWORD }}
-          TWILIO_SID: ${{ secrets.TWILIO_SID }}
-          TWILIO_TOKEN: ${{ secrets.TWILIO_TOKEN }}
-          WHATSAPP_FROM: ${{ secrets.WHATSAPP_FROM }}
-          WHATSAPP_TO: ${{ secrets.WHATSAPP_TO }}
+
+      - name: Commit screenshots
+        run: |
+          git config user.name "github-actions"
+          git config user.email "actions@github.com"
+          git add screenshots/*.png
+          git commit -m "Auto: GPS screenshot $(date +'%Y-%m-%d %H:%M')" || echo "No changes"
+          git push
